@@ -65,7 +65,7 @@ The plugin's UI text follows **CloudCLI's own language setting** and switches in
 
 It covers every **fixed string** in the plugin: the settings page title, toggle copy, group names, each color row's label and hint, the preview, the status line, buttons — plus the hover card's heading, field names, the "Path copied" feedback and the screen-reader `aria-label`s. Dates and times are formatted for the active locale with `Intl.DateTimeFormat`.
 
-> Boundary: the **navigation entry** in the settings dialog's left rail stays "Web 界面定制". That row is rendered by the host, whose `label` is taken verbatim from `manifest.json`'s `displayName`; the plugin never gets a `t()`, so it cannot follow the language. That is a known host-side limitation, not something left out here.
+The **navigation entry** in the settings dialog's left rail follows the language too. That row is rendered by the host from `manifest.json`'s single-string `displayName`, which the host itself cannot translate; the plugin's resident surface rewrites that text node with a `MutationObserver` (`src/nav.ts`), so a language switch, reopening the dialog, or a React re-render all re-align it. If a future host changes how the row is rendered, the rewrite safely no-ops and the manifest string shows through — nothing breaks.
 
 ## Why the host has to cooperate
 
@@ -94,6 +94,7 @@ web-ui-customizer/
 └── src/
     ├── index.ts           entry: dispatch on host.context.surface — card in the resident layer, panel on the settings page
     ├── card.ts            hover card: row targeting, show/hide delays, click-to-copy, time cache
+    ├── nav.ts             localises the settings sidebar entry (the host can only render the manifest's single string)
     ├── panel.ts           settings page: toggle, theme switch, preview, color rows
     ├── tokens.ts          adjustable token definitions: host defaults, selectors, derived variables
     ├── apply.ts           compiles settings into a single injected stylesheet (scoped per theme)

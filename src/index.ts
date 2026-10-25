@@ -19,6 +19,7 @@
 
 import { watchAppearance } from './apply.js';
 import { mountWorkspaceInfoCard } from './card.js';
+import { mountNavLocalizer } from './nav.js';
 import { mountSettingsPanel } from './panel.js';
 import { injectStyles } from './ui/styles.js';
 import type { PluginHostApi } from './types.js';
@@ -37,10 +38,14 @@ const containerTeardowns = new WeakMap<HTMLElement, () => void>();
 function mountFor(container: HTMLElement, host: PluginHostApi): () => void {
   if (host.context.surface === 'resident') {
     // The colour overrides belong to the whole document, so the surface that is
-    // always mounted owns their lifetime. The card is a second, independent job.
+    // always mounted owns their lifetime. The card is a second, independent job,
+    // and so is the settings sidebar label, which the host renders from the
+    // manifest's single-string displayName and therefore cannot translate.
     const stopWatching = watchAppearance();
     const stopCard = mountWorkspaceInfoCard(host);
+    const stopNav = mountNavLocalizer(host);
     return () => {
+      stopNav();
       stopCard();
       stopWatching();
     };

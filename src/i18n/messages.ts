@@ -12,8 +12,7 @@
  */
 
 const en = {
-  'panel.title': 'Web UI Customizer',
-  'panel.subtitle': 'Fine-tune the CloudCLI interface: the workspace hover card, theme colours, and the command line\'s keyword colours. Settings stay in this browser and apply immediately.',
+  'panel.title': 'Web UI Customizer',  'panel.subtitle': 'Fine-tune the CloudCLI interface: the workspace hover card, theme colours, and the command line\'s keyword colours. Settings stay in this browser and apply immediately.',
 
   'panel.feature.section': 'Feature',
   'panel.status.on': 'On: hovering a workspace row shows its info card.',
@@ -76,6 +75,12 @@ const en = {
   'card.meta.loading': 'Reading creation time…',
   'card.meta.created': 'Created {time}',
   'card.meta.modified': 'Modified {time}',
+
+  // The settings dialog's sidebar renders this plugin's display name from the
+  // manifest, which is a single string the host cannot translate. The resident
+  // surface rewrites that one text node to follow the host language; this is
+  // the label it writes.
+  'nav.label': 'Web UI Customizer',
 };
 
 /** The key set every locale must provide. */
@@ -146,6 +151,8 @@ const zhCN: Record<MessageKey, string> = {
   'card.meta.loading': '创建时间读取中…',
   'card.meta.created': '创建于 {time}',
   'card.meta.modified': '最近修改 {time}',
+
+  'nav.label': 'Web 界面定制',
 };
 
 const zhTW: Record<MessageKey, string> = {
@@ -213,6 +220,8 @@ const zhTW: Record<MessageKey, string> = {
   'card.meta.loading': '建立時間讀取中…',
   'card.meta.created': '建立於 {time}',
   'card.meta.modified': '最近修改 {time}',
+
+  'nav.label': 'Web 介面客製',
 };
 
 export const MESSAGES = {
