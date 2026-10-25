@@ -1,0 +1,9 @@
+# Normalise line endings in the repository: LF on disk in git, native in the
+# working tree. Without this, a Windows checkout commits CRLF and every clone
+# on another OS shows the whole file as changed.
+* text=auto eol=lf
+
+# Binary assets must not be normalised.
+*.png binary
+*.jpg binary
+*.ico binary

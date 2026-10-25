@@ -1,0 +1,24 @@
+﻿{
+  "name": "cloudcli-plugin-web-ui-customizer",
+  "version": "0.3.0",
+  "private": true,
+  "type": "module",
+  "description": "Customize the CloudCLI web UI: workspace hover card with path copy, theme colours and command-line keyword colours.",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "typecheck": "tsc --noEmit",
+    "dev": "node scripts/build.mjs --watch"
+  },
+  "//dependencies": "esbuild lives in dependencies, not devDependencies: CloudCLI installs plugins with the host's own environment, and a host running NODE_ENV=production makes npm skip devDependencies entirely, leaving the build with no bundler.",
+  "dependencies": {
+    "esbuild": "^0.25.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.5.0"
+  }
+}

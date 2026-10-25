@@ -1,0 +1,9 @@
+# Dependencies and build output — `npm install` and `npm run build` recreate both.
+# The host runs those itself after a git install, so they are not committed.
+node_modules/
+dist/
+
+# Local editor / OS noise
+.DS_Store
+Thumbs.db
+*.log
