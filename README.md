@@ -62,7 +62,9 @@ CloudCLI 上游的插件系统只有一个挂载位：`slot: "tab"`——插件 
 
 同一个 bundle 用 `host.context.surface` 判别自己在哪个表面（`'resident' | 'settings' | 'tab'`），分别渲染卡片或面板。两处是**同一份 bundle 的两个模块实例**，模块作用域不共享，所以靠 `localStorage` + 事件同步。
 
-装到上游版本上插件仍可用——只是要先点一次它的标签页，且「设置里的那一页」不会出现。
+**装之前先确认宿主支持这两个字段。** 上游 `siteboon/claudecodeui` 的 `validateManifest` 只接受 `ALLOWED_SLOTS = ['tab']`，遇到 `"slot": "settings"` 会直接判为非法清单，安装以 `Invalid manifest: Invalid plugin slot: settings. Must be one of: tab` 失败——不是「装上了但少一页」，而是根本装不上。`alwaysMount` 上游虽然不会拒绝（它只校验必填字段和 slot），但上游也没有常驻层，所以一个 bundle 若只有悬浮卡能力，装到上游等于什么都不做。
+
+所以本插件目前只在上面的 fork 上可用。
 
 ## 结构
 
