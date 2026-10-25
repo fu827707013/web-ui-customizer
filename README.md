@@ -1,5 +1,7 @@
 # Web 界面定制（web-ui-customizer）
 
+**简体中文** | [English](README.en.md)
+
 CloudCLI 插件：给 Web 界面加两件事——**工作区悬浮信息卡**（含一键复制路径）与**主题/命令行配色**。全部设置默认关闭或默认沿用原生配色，装上去不改任何现有行为。
 
 插件最初叫 `workspace-info-card`，加入配色能力后改名。旧的 `localStorage` 键会被读一次，所以早期打开过悬浮卡的人升级后开关状态不会丢。
