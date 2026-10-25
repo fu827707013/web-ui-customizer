@@ -133,3 +133,4 @@ Copy-Item -Path src, scripts, dist -Destination $target -Recurse -Force
 - **卡片挂在 `document.body` 而不是自己的容器里**。常驻层的容器是零尺寸的，塞进去的东西看不见。
 - **读时间走宿主 RPC 代理**，不是裸 `fetch`：`/api/plugins/*` 需要登录态，裸请求会 401。
 - **创建时间来自文件系统**，由插件后端 `fs.stat` 得到；有些文件系统不报 creation time，此时卡片少显示一行，而不是显示 1970。
+- **`package.json` 不能带 BOM**。宿主用它判断有没有 `build` 脚本，读的是 `JSON.parse(fs.readFileSync(..., 'utf-8'))`——带 BOM 会解析失败，宿主把这当成「没有构建脚本」，跳过构建仍然报安装成功，结果是插件装上了却没有 `dist/`，前端与后端全都不工作。Windows 编辑器很容易在存盘时自动加 BOM，本仓库的工作区与 git blob 都是无 BOM 的。
