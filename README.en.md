@@ -16,7 +16,11 @@ The settings live in the **Settings dialog** — a page of its own under *Plugin
 
 ![Settings page](docs/settings-page.png)
 
-> The screenshots show the Chinese UI; the interface itself is not translated by this plugin.
+Settings page with the host set to Chinese (the plugin UI and its sidebar nav entry follow the host language):
+
+![Settings page (Chinese)](docs/settings-page-zh.png)
+
+> Screenshot captions are English for readability; the plugin UI itself is fully localised (en / zh-CN / zh-TW).
 
 ## Features
 
