@@ -51,6 +51,20 @@ CloudCLI 的命令块（`$ npm run build` / 输出 / 报错）里关键字是写
 
 > 边界：xterm 终端（`Terminal` 标签页）的配色由 xterm 主题对象决定，不走 CSS 变量，**不在这组覆盖范围内**。
 
+### 四、多语言界面
+
+插件的界面文案跟随 **CloudCLI 自己的语言设置**，切语言立刻生效，不用刷新、不用重装：
+
+| 宿主语言 | 插件文案 |
+| --- | --- |
+| English | English |
+| 简体中文 / 繁體中文 | 简体 / 繁體（自动区分 `zh-CN` 与 `zh-TW`） |
+| 其他 15 种语言 | 回退到英文（与宿主 `fallbackLng: 'en'` 的策略一致） |
+
+覆盖面是插件里所有**固定文案**：设置页的标题、开关说明、分组名、每个颜色项的名称与提示、预览区、状态行、按钮，以及悬浮卡的标题行、字段名、「已复制路径」反馈和读屏用的 `aria-label`。日期时间按当前语言用 `Intl.DateTimeFormat` 格式化。
+
+> 边界：设置对话框**左栏的导航项**仍然是「Web 界面定制」。那一行由宿主渲染，`label` 直接取 `manifest.json` 的 `displayName` 字符串，插件拿不到 `t()`，所以没法跟随语言——这是宿主侧的已知限制，不是漏做。
+
 ## 为什么需要宿主配合
 
 CloudCLI 上游的插件系统只有一个挂载位：`slot: "tab"`——插件 UI 只在**用户点开它的标签页时**才被 `import()` 进浏览器。而「悬浮卡片」和「全局配色」都要求不打开标签页也生效、「设置项」又不该占一个工作区视图，纯插件做不到。
@@ -86,6 +100,7 @@ web-ui-customizer/
     ├── prefs.ts           设置持久化 + 跨表面变更事件
     ├── server.ts          后端：读目录创建/修改时间
     ├── types.ts           宿主 API 类型
+    ├── i18n/              多语言：语言解析、消息表、订阅宿主语言变化
     └── ui/                样式表与内联图标
 ```
 
@@ -137,4 +152,6 @@ Copy-Item -Path src, scripts, dist -Destination $target -Recurse -Force
 - **卡片挂在 `document.body` 而不是自己的容器里**。常驻层的容器是零尺寸的，塞进去的东西看不见。
 - **读时间走宿主 RPC 代理**，不是裸 `fetch`：`/api/plugins/*` 需要登录态，裸请求会 401。
 - **创建时间来自文件系统**，由插件后端 `fs.stat` 得到；有些文件系统不报 creation time，此时卡片少显示一行，而不是显示 1970。
+- **插件拿不到宿主的 `t()`**。插件 bundle 是动态 `import()` 进来的独立模块，没有 React 上下文，也拿不到宿主的 i18n 实例。插件的做法是读宿主写在 `localStorage` 里的语言镜像（`user-preferences` → `userLanguage`），再监听宿主的 `user-preferences:changed` 事件做实时切换——这条路不依赖宿主提供任何新 API。
+- **语言回退顺序是 `en` 而不是中文**。`resolveLocale()` 把 `zh-Hans` 归到 `zh-CN`、`zh-Hant`/`zh-TW`/`zh-HK`/`zh-MO` 归到 `zh-TW`，其余一律归到 `en`（含 `navigator.language` 不参与判断，免得和宿主设置打架）。`messages.ts` 里 `en` 是基准表，`MessageKey = keyof typeof en`，漏翻译会直接类型报错而不是运行时露中文。
 - **`package.json` 不能带 BOM**。宿主用它判断有没有 `build` 脚本，读的是 `JSON.parse(fs.readFileSync(..., 'utf-8'))`——带 BOM 会解析失败，宿主把这当成「没有构建脚本」，跳过构建仍然报安装成功，结果是插件装上了却没有 `dist/`，前端与后端全都不工作。Windows 编辑器很容易在存盘时自动加 BOM，本仓库的工作区与 git blob 都是无 BOM 的。

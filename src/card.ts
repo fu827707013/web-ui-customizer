@@ -9,10 +9,13 @@
  *
  * The card is painted entirely from the host's theme variables, so it looks
  * native in both themes and picks up any accent the user sets in this plugin's
- * own settings panel.
+ * own settings panel. Its copy follows the language chosen in the host, read
+ * live at render time so a card opened after a language switch is already in
+ * the new language.
  */
 
 import { copyText } from './clipboard.js';
+import { createI18n, type I18n } from './i18n/index.js';
 import { loadPrefs, SETTINGS_CHANGED_EVENT } from './prefs.js';
 import { CARD_CLASS } from './ui/styles.js';
 import { ALERT_ICON, CHECK_ICON, COPY_ICON } from './ui/icons.js';
@@ -53,21 +56,6 @@ type CardElements = {
   action: HTMLButtonElement;
 };
 
-/**
- * Formats an ISO instant the way the card reads it: local time, no seconds, in
- * the `2026年10月25日 00:20` shape the rest of this panel uses. Built by hand
- * because `toLocaleString` renders a locale-dependent separator that would not
- * match the surrounding Chinese labels.
- */
-function formatInstant(iso: string): string {
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return '';
-
-  const pad = (value: number): string => String(value).padStart(2, '0');
-  return `${date.getFullYear()}年${pad(date.getMonth() + 1)}月${pad(date.getDate())}日 `
-    + `${pad(date.getHours())}:${pad(date.getMinutes())}`;
-}
-
 function element<K extends keyof HTMLElementTagNameMap>(
   tag: K,
   className: string,
@@ -79,14 +67,14 @@ function element<K extends keyof HTMLElementTagNameMap>(
   return node;
 }
 
-function buildCardElements(): CardElements {
+function buildCardElements(i18n: I18n): CardElements {
   const root = element('div', CARD_CLASS);
   // A group rather than a dialog: the card is a hover affordance that never
   // takes focus, and `role="dialog"` would advertise a modal the host does not
   // manage (and would collide with the settings dialog in `[role="dialog"]`
   // lookups). The label still gives screen readers a name for the content.
   root.setAttribute('role', 'group');
-  root.setAttribute('aria-label', '工作区信息');
+  root.setAttribute('aria-label', i18n.t('card.ariaLabel'));
 
   const head = element('div', `${CARD_CLASS}-head`);
   const name = element('span', `${CARD_CLASS}-name`);
@@ -105,12 +93,14 @@ function buildCardElements(): CardElements {
 }
 
 /** Sets the action line to its idle, copied or failed state. */
-function setAction(card: CardElements, state: 'idle' | 'copied' | 'failed'): void {
-  const label = state === 'copied'
-    ? '已复制路径'
-    : state === 'failed'
-      ? '复制失败，请手动选择路径'
-      : '点击复制路径';
+function setAction(card: CardElements, i18n: I18n, state: 'idle' | 'copied' | 'failed'): void {
+  const label = i18n.t(
+    state === 'copied'
+      ? 'card.action.copied'
+      : state === 'failed'
+        ? 'card.action.failed'
+        : 'card.action.idle',
+  );
   const glyph = state === 'copied' ? CHECK_ICON : state === 'failed' ? ALERT_ICON : COPY_ICON;
 
   card.action.dataset.state = state;
@@ -126,13 +116,16 @@ function setAction(card: CardElements, state: 'idle' | 'copied' | 'failed'): voi
  * or the host tears the layer down.
  */
 export function mountWorkspaceInfoCard(host: PluginHostApi): () => void {
-  const card = buildCardElements();
+  const i18n = createI18n();
+  const card = buildCardElements(i18n);
   let hoveredRow: HTMLElement | null = null;
   let hoveredPath = '';
   let visible = false;
   let showTimer: number | null = null;
   let hideTimer: number | null = null;
   let copyTimer: number | null = null;
+  /** Last state set on the footer, so a language change can re-render it. */
+  let actionState: 'idle' | 'copied' | 'failed' = 'idle';
 
   // Times are per-path and do not change while the directory exists, so one
   // lookup per workspace is enough for the session.
@@ -180,20 +173,24 @@ export function mountWorkspaceInfoCard(host: PluginHostApi): () => void {
 
     const times = timesCache.get(path);
     if (times === undefined) {
-      card.meta.appendChild(element('span', `${CARD_CLASS}-meta-line`, '创建时间读取中…'));
+      card.meta.appendChild(element('span', `${CARD_CLASS}-meta-line`, i18n.t('card.meta.loading')));
       return;
     }
     if (!times) return;
 
     if (times.createdAt) {
-      card.meta.appendChild(
-        element('span', `${CARD_CLASS}-meta-line`, `创建于 ${formatInstant(times.createdAt)}`),
-      );
+      card.meta.appendChild(element(
+        'span',
+        `${CARD_CLASS}-meta-line`,
+        i18n.t('card.meta.created', { time: i18n.formatDateTime(times.createdAt) }),
+      ));
     }
     if (times.modifiedAt) {
-      card.meta.appendChild(
-        element('span', `${CARD_CLASS}-meta-line`, `最近修改 ${formatInstant(times.modifiedAt)}`),
-      );
+      card.meta.appendChild(element(
+        'span',
+        `${CARD_CLASS}-meta-line`,
+        i18n.t('card.meta.modified', { time: i18n.formatDateTime(times.modifiedAt) }),
+      ));
     }
   }
 
@@ -227,7 +224,8 @@ export function mountWorkspaceInfoCard(host: PluginHostApi): () => void {
     card.root.dataset.path = path;
     card.name.textContent = row.getAttribute(NAME_ATTRIBUTE) ?? path;
     card.path.textContent = path;
-    setAction(card, 'idle');
+    actionState = 'idle';
+    setAction(card, i18n, 'idle');
 
     if (!card.root.isConnected) {
       document.body.appendChild(card.root);
@@ -308,12 +306,14 @@ export function mountWorkspaceInfoCard(host: PluginHostApi): () => void {
     if (!path) return;
 
     void copyText(path).then((result) => {
-      setAction(card, result);
+      actionState = result;
+      setAction(card, i18n, result);
       copyTimer = clearTimer(copyTimer);
       // Reverts the label so a second click reads as a fresh action.
       copyTimer = window.setTimeout(() => {
         copyTimer = null;
-        setAction(card, 'idle');
+        actionState = 'idle';
+        setAction(card, i18n, 'idle');
       }, COPY_FEEDBACK_MS);
     });
   }
@@ -346,6 +346,15 @@ export function mountWorkspaceInfoCard(host: PluginHostApi): () => void {
     hideCard();
   };
 
+  // The language changed while a card is open: redraw its copy in place rather
+  // than leaving Chinese text on an English page.
+  const stopLanguage = i18n.onChange(() => {
+    card.root.setAttribute('aria-label', i18n.t('card.ariaLabel'));
+    setAction(card, i18n, actionState);
+    const path = card.root.dataset.path;
+    if (path) renderMeta(path);
+  });
+
   document.addEventListener('pointerover', onPointerOver, true);
   document.addEventListener('pointerout', onPointerOut, true);
   document.addEventListener('click', onCardClick, true);
@@ -364,6 +373,9 @@ export function mountWorkspaceInfoCard(host: PluginHostApi): () => void {
     document.removeEventListener('keydown', onKeyDown);
     window.removeEventListener('resize', onViewportChange);
     window.removeEventListener(SETTINGS_CHANGED_EVENT, onSettingsChanged);
+
+    stopLanguage();
+    i18n.dispose();
 
     showTimer = clearTimer(showTimer);
     hideTimer = clearTimer(hideTimer);

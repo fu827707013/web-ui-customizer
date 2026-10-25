@@ -11,19 +11,23 @@
  *   variable (the `$` of a Bash command block, the colour of a failed command's
  *   output). Those are matched with a selector instead.
  *
- * Nothing here is user data: labels are constant strings and selectors are
- * constant class names taken from the host's own components.
+ * Nothing here is user data: labels are message keys (see i18n/messages.ts) and
+ * selectors are constant class names taken from the host's own components.
  */
 
 import { hslTripleToHex } from './color.js';
+import type { MessageKey } from './i18n/messages.js';
 
 /** The two themes CloudCLI ships; every colour is configured once per theme. */
 export type ThemeName = 'light' | 'dark';
 
 export const THEMES: readonly ThemeName[] = ['light', 'dark'];
 
-/** Chinese label for each theme, used by the panel's theme switch. */
-export const THEME_LABELS: Record<ThemeName, string> = { light: '浅色', dark: '深色' };
+/** Message key for each theme's label, used by the panel's theme switch. */
+export const THEME_LABEL_KEYS: Record<ThemeName, MessageKey> = {
+  light: 'theme.light',
+  dark: 'theme.dark',
+};
 
 export type TokenGroup = 'theme' | 'text' | 'command';
 
@@ -44,9 +48,10 @@ type TokenBase = {
   /** Stable key in storage; never displayed. */
   id: string;
   group: TokenGroup;
-  label: string;
-  /** One short line under the label, so the row says what it actually changes. */
-  hint: string;
+  /** Message key for the row's label. */
+  labelKey: MessageKey;
+  /** Message key for the one short line under the label, saying what it changes. */
+  hintKey: MessageKey;
   /** Host default, light theme. HSL triple for `var` tokens, hex for `color` tokens. */
   light: string;
   /** Host default, dark theme. Same shape as `light`. */
@@ -112,8 +117,8 @@ export const TOKENS: readonly Token[] = [
     kind: 'var',
     id: 'primary',
     group: 'theme',
-    label: '强调色',
-    hint: '按钮、链接、选中态与聚焦环',
+    labelKey: 'tokens.primary.label',
+    hintKey: 'tokens.primary.hint',
     cssVar: '--primary',
     light: '221.2 83.2% 53.3%',
     dark: '217.2 91.2% 59.8%',
@@ -130,8 +135,8 @@ export const TOKENS: readonly Token[] = [
     kind: 'var',
     id: 'background',
     group: 'theme',
-    label: '页面背景',
-    hint: '主内容区与侧边栏底色',
+    labelKey: 'tokens.background.label',
+    hintKey: 'tokens.background.hint',
     cssVar: '--background',
     light: '44 22% 96%',
     dark: '0 0% 8%',
@@ -144,8 +149,8 @@ export const TOKENS: readonly Token[] = [
     kind: 'var',
     id: 'card',
     group: 'theme',
-    label: '卡片与浮层',
-    hint: '设置卡片、弹窗与下拉面板',
+    labelKey: 'tokens.card.label',
+    hintKey: 'tokens.card.hint',
     cssVar: '--card',
     light: '0 0% 100%',
     dark: '0 0% 12%',
@@ -159,8 +164,8 @@ export const TOKENS: readonly Token[] = [
     kind: 'var',
     id: 'border',
     group: 'theme',
-    label: '分割线',
-    hint: '卡片描边、输入框边界',
+    labelKey: 'tokens.border.label',
+    hintKey: 'tokens.border.hint',
     cssVar: '--border',
     light: '44 14% 87%',
     dark: '0 0% 17%',
@@ -170,8 +175,8 @@ export const TOKENS: readonly Token[] = [
     kind: 'var',
     id: 'foreground',
     group: 'text',
-    label: '正文文字',
-    hint: '标题、消息正文、命令文本',
+    labelKey: 'tokens.foreground.label',
+    hintKey: 'tokens.foreground.hint',
     cssVar: '--foreground',
     ...FOREGROUND,
     also: [
@@ -185,8 +190,8 @@ export const TOKENS: readonly Token[] = [
     kind: 'var',
     id: 'muted',
     group: 'text',
-    label: '次要文字',
-    hint: '说明、时间戳、命令输出',
+    labelKey: 'tokens.muted.label',
+    hintKey: 'tokens.muted.hint',
     cssVar: '--muted-foreground',
     ...MUTED_FOREGROUND,
   },
@@ -194,8 +199,8 @@ export const TOKENS: readonly Token[] = [
     kind: 'color',
     id: 'command-prompt',
     group: 'command',
-    label: '提示符 $',
-    hint: '命令块最左侧的 $ 符号',
+    labelKey: 'tokens.command-prompt.label',
+    hintKey: 'tokens.command-prompt.hint',
     selector: COMMAND_PROMPT_SELECTOR,
     light: '#10b981',
     dark: '#34d399',
@@ -204,8 +209,8 @@ export const TOKENS: readonly Token[] = [
     kind: 'color',
     id: 'command-text',
     group: 'command',
-    label: '命令文本',
-    hint: '命令块里被执行的命令本身',
+    labelKey: 'tokens.command-text.label',
+    hintKey: 'tokens.command-text.hint',
     // The command text renders in the body colour; scoping the `text-foreground`
     // utility keeps the rule from repainting it anywhere else on the page.
     selector: `${COMMAND_SCOPE} span[class~="text-foreground"]`,
@@ -215,8 +220,8 @@ export const TOKENS: readonly Token[] = [
     kind: 'color',
     id: 'command-output',
     group: 'command',
-    label: '正常输出',
-    hint: '命令成功时输出的文字',
+    labelKey: 'tokens.command-output.label',
+    hintKey: 'tokens.command-output.hint',
     selector: COMMAND_OUTPUT_SELECTOR,
     ...MUTED_OUTPUT_HEX,
   },
@@ -224,8 +229,8 @@ export const TOKENS: readonly Token[] = [
     kind: 'color',
     id: 'command-error',
     group: 'command',
-    label: '报错输出',
-    hint: '命令失败时输出文字的颜色',
+    labelKey: 'tokens.command-error.label',
+    hintKey: 'tokens.command-error.hint',
     selector: COMMAND_ERROR_SELECTOR,
     light: '#dc2626',
     dark: '#f87171',
@@ -234,14 +239,16 @@ export const TOKENS: readonly Token[] = [
 
 export type TokenGroupSpec = {
   id: TokenGroup;
-  title: string;
-  hint: string;
+  /** Message key for the group heading. */
+  titleKey: MessageKey;
+  /** Message key for the line that explains what the group covers. */
+  hintKey: MessageKey;
 };
 
 export const TOKEN_GROUPS: readonly TokenGroupSpec[] = [
-  { id: 'theme', title: '主题色', hint: '浅色与深色主题各存一套，跟随右上角的主题切换。' },
-  { id: 'text', title: '字体颜色', hint: '正文与辅助文字；命令块的文字也跟随这两项。' },
-  { id: 'command', title: '命令行配色', hint: '命令块里的关键字颜色，覆盖组件写死的 Tailwind 色值。' },
+  { id: 'theme', titleKey: 'groups.theme.title', hintKey: 'groups.theme.hint' },
+  { id: 'text', titleKey: 'groups.text.title', hintKey: 'groups.text.hint' },
+  { id: 'command', titleKey: 'groups.command.title', hintKey: 'groups.command.hint' },
 ];
 
 const TOKENS_BY_ID = new Map(TOKENS.map((token) => [token.id, token]));

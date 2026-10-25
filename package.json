@@ -1,6 +1,6 @@
 {
   "name": "cloudcli-plugin-web-ui-customizer",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "private": true,
   "type": "module",
   "description": "Customize the CloudCLI web UI: workspace hover card with path copy, theme colours and command-line keyword colours.",

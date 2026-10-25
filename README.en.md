@@ -53,6 +53,20 @@ The keyword colors inside CloudCLI's command blocks (`$ npm run build` / output 
 
 > Boundary: the xterm terminal (the `Terminal` tab) is colored by the xterm theme object rather than by CSS variables, so it is **not** covered by this group.
 
+### 4. Multilingual UI
+
+The plugin's UI text follows **CloudCLI's own language setting** and switches instantly — no reload, no reinstall:
+
+| Host language | Plugin text |
+| --- | --- |
+| English | English |
+| 简体中文 / 繁體中文 | Simplified / Traditional (distinguishes `zh-CN` from `zh-TW`) |
+| Any other of the 15 host languages | Falls back to English (matching the host's `fallbackLng: 'en'`) |
+
+It covers every **fixed string** in the plugin: the settings page title, toggle copy, group names, each color row's label and hint, the preview, the status line, buttons — plus the hover card's heading, field names, the "Path copied" feedback and the screen-reader `aria-label`s. Dates and times are formatted for the active locale with `Intl.DateTimeFormat`.
+
+> Boundary: the **navigation entry** in the settings dialog's left rail stays "Web 界面定制". That row is rendered by the host, whose `label` is taken verbatim from `manifest.json`'s `displayName`; the plugin never gets a `t()`, so it cannot follow the language. That is a known host-side limitation, not something left out here.
+
 ## Why the host has to cooperate
 
 Upstream CloudCLI's plugin system has exactly one mount point: `slot: "tab"` — a plugin's UI is only `import()`ed into the browser **when the user opens its tab**. But the hover card and the global colors have to work without opening a tab, and the settings page should not occupy a workspace view; a pure plugin cannot do that.
@@ -88,6 +102,7 @@ web-ui-customizer/
     ├── prefs.ts           settings persistence + cross-surface change event
     ├── server.ts          backend: reads directory creation / modification times
     ├── types.ts           host API types
+    ├── i18n/              localization: locale resolution, message tables, host-language subscription
     └── ui/                stylesheets and inline icons
 ```
 
@@ -139,4 +154,6 @@ Then restart the CloudCLI host (the manifest list is only scanned at startup or 
 - **The card is attached to `document.body`, not to its own container.** The resident layer's container is zero-sized, so anything placed inside it is invisible.
 - **Times are read through the host RPC proxy**, not a bare `fetch`: `/api/plugins/*` requires an authenticated session, so a bare request returns 401.
 - **Creation time comes from the filesystem**, via `fs.stat` in the plugin backend; some filesystems do not report creation time, in which case the card simply omits that line instead of showing 1970.
+- **A plugin cannot reach the host's `t()`.** The plugin bundle is imported dynamically as a standalone module: it has no React context and no handle on the host's i18n instance. Instead it reads the language that the host mirrors into `localStorage` (`user-preferences` → `userLanguage`) and listens for the host's `user-preferences:changed` event to switch live — a path that needs no new host API.
+- **The fallback language is `en`, not Chinese.** `resolveLocale()` maps `zh-Hans` to `zh-CN` and `zh-Hant`/`zh-TW`/`zh-HK`/`zh-MO` to `zh-TW`, everything else to `en` (`navigator.language` deliberately plays no part, so it cannot fight the host setting). `en` in `messages.ts` is the base table and `MessageKey = keyof typeof en`, so a missing translation is a type error rather than Chinese leaking through at runtime.
 - **`package.json` must not contain a BOM.** The host uses it to decide whether a `build` script exists, reading it with `JSON.parse(fs.readFileSync(..., 'utf-8'))` — a BOM makes the parse fail, the host treats that as "no build script", skips the build and still reports a successful install. The result is an installed plugin with no `dist/`, so neither the frontend nor the backend works. Windows editors like to add a BOM on save; both the working tree and the git blob in this repository are BOM-free.
