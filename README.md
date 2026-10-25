@@ -53,11 +53,11 @@ CloudCLI 的命令块（`$ npm run build` / 输出 / 报错）里关键字是写
 
 CloudCLI 上游的插件系统只有一个挂载位：`slot: "tab"`——插件 UI 只在**用户点开它的标签页时**才被 `import()` 进浏览器。而「悬浮卡片」和「全局配色」都要求不打开标签页也生效、「设置项」又不该占一个工作区视图，纯插件做不到。
 
-这个 fork 给宿主加了两种表面（[宿主改动说明](../../claudecodeui/docs/plugin-resident-mount.md)）：
+这个 fork 给宿主加了两种表面（[宿主改动说明](https://github.com/fu827707013/claudecodeui/blob/feat/plugin-resident-mount/docs/plugin-resident-mount.md)）：
 
 | manifest 字段 | 效果 | 本插件用途 |
 | --- | --- | --- |
-| `"alwaysMount": true` | 应用启动即把 bundle 挂进常驻层（[PluginHostLayer](../../claudecodeui/src/modules/plugins/PluginHostLayer.tsx)），与当前打开哪个标签页无关 | 注入配色样式表、运行悬浮卡片 |
+| `"alwaysMount": true` | 应用启动即把 bundle 挂进常驻层（[PluginHostLayer](https://github.com/fu827707013/claudecodeui/blob/feat/plugin-resident-mount/src/modules/plugins/PluginHostLayer.tsx)），与当前打开哪个标签页无关 | 注入配色样式表、运行悬浮卡片 |
 | `"slot": "settings"` | 插件 UI 变成「设置」对话框里的一页，左栏导航多一项 | 配置界面 |
 
 同一个 bundle 用 `host.context.surface` 判别自己在哪个表面（`'resident' | 'settings' | 'tab'`），分别渲染卡片或面板。两处是**同一份 bundle 的两个模块实例**，模块作用域不共享，所以靠 `localStorage` + 事件同步。
@@ -106,7 +106,7 @@ https://github.com/fu827707013/web-ui-customizer
 
 打开 **设置 → 插件**，在「从 Git 安装」里粘贴上面这行，等它构建完成 → 重启 CloudCLI → 在 **设置 → Web 界面定制** 里打开开关。
 
-> 不要填包含多个插件的合集仓库地址：那种仓库根目录没有 `manifest.json`，安装器会报 "Cloned repository does not contain a manifest.json"。
+> 安装器不会并行处理「合集仓库」：它只 clone 一次、只看仓库根目录，所以一个仓库放多个插件是装不上的（会报 "Cloned repository does not contain a manifest.json"）。想发多个插件就发多个仓库。
 
 ### 二、本地开发装（改代码时用）
 
