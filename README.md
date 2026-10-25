@@ -16,7 +16,7 @@ CloudCLI 插件：给 Web 界面加两件事——**工作区悬浮信息卡**�
 
 ![设置页](docs/settings-page.png)
 
-中文界面下的设置页（插件界面与设置左栏导航项均跟随宿主语言）：
+插件界面与设置左栏导航项均跟随宿主语言（上图 English，下图简体中文）：
 
 ![设置页（中文）](docs/settings-page-zh.png)
 
