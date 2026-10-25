@@ -2,7 +2,7 @@
   "name": "web-ui-customizer",
   "displayName": "Web UI Customizer",
   "version": "0.5.0",
-  "description": "瀹氬埗 CloudCLI 鐨?Web 鐣岄潰锛氬伐浣滃尯鎮诞淇℃伅鍗★紙鍚竴閿鍒惰矾寰勶級銆佷富棰橀厤鑹蹭笌鍛戒护琛屽叧閿瓧棰滆壊銆傞厤缃〉鍦ㄣ€岃缃?鈫?Web 鐣岄潰瀹氬埗銆嶏紝榛樿涓嶆敼鍔ㄤ换浣曠晫闈€?,
+  "description": "定制 CloudCLI 的 Web 界面：工作区悬浮信息卡（含一键复制路径）、主题配色与命令行关键字颜色。配置页在「设置 → Web 界面定制」，默认不改动任何界面。",
   "author": "Michael.fu",
   "icon": "icon.svg",
   "type": "module",
